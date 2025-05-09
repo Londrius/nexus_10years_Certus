@@ -1,16 +1,19 @@
 import subprocess
 import sys
 from PIL import Image
+import numpy as np
+import pandas as pd
+from PIL import Image
 
 # Function to install a package
 def install(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
 # Example: Install numpy and requests
-install("numpy")
-install("requests")
-install("pandas")
-install("Pillow")
+# install("numpy")
+# install("requests")
+# install("pandas")
+# install("Pillow")
 
 # Open a picture
 image_path = r"C:\NEXUS_10years_Certus\nexus_10years_Certus\Tsunami_by_hokusai_19th_century.jpg"
