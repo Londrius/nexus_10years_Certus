@@ -1,60 +1,47 @@
-from PIL import Image
-import pandas as pd
 import numpy as np
+import pandas as pd
+from PIL import Image
 
-# Configurable parameters
-PLATE_ROWS = 32
-PLATE_COLS = 48
-MAX_VOLUME_NL = 300  # Max volume per well in nanoliters
-OUTPUT_FILE = 'well_plate_dispense_plan.csv'
+# Parameters
+input_image = "C:\NEXUS_10years_Certus\nexus_10years_Certus\Tsunami_by_hokusai_19th_century.jpg"
+plate_rows, plate_cols = 32, 48
+max_total_ul = 2.0
+output_csv = "certus_dispense_bcmy.csv"
 
-# Mapping: CMYK to dispenser channels
-CMYK_CHANNELS = {
-    'C': 1,  # Cyan → Channel 1
-    'M': 2,  # Magenta → Channel 2
-    'Y': 3,  # Yellow → Channel 3
-    'K': 4   # Black → Channel 4
-}
+# Load and resize image
+img = Image.open(input_image).convert('RGB')
+img_resized = img.resize((plate_cols, plate_rows), Image.LANCZOS)
+img_np = np.asarray(img_resized) / 255.0  # Normalize to [0,1]
 
-def rgb_to_cmyk(r, g, b):
-    # Normalize RGB
-    if (r, g, b) == (0, 0, 0):
-        return 0, 0, 0, 1
-    c = 1 - r / 255
-    m = 1 - g / 255
-    y = 1 - b / 255
-    min_cmy = min(c, m, y)
-    c = (c - min_cmy) / (1 - min_cmy)
-    m = (m - min_cmy) / (1 - min_cmy)
-    y = (y - min_cmy) / (1 - min_cmy)
-    k = min_cmy
-    return c, m, y, k
+# Convert to CMY and add derived Blue channel
+R = img_np[:, :, 0]
+G = img_np[:, :, 1]
+B = img_np[:, :, 2]
 
-def generate_dispense_plan(image_path):
-    # Load and resize image to 48x32
-    img = Image.open(image_path).convert('RGB')
-    img = img.resize((PLATE_COLS, PLATE_ROWS))
+C = 1 - R
+M = 1 - G
+Y = 1 - B
+# Approximate Blue intensity as Cyan+Magenta contribution
+Blue = (C + M) / 2  
 
-    data = []
-    for row in range(PLATE_ROWS):
-        for col in range(PLATE_COLS):
-            r, g, b = img.getpixel((col, row))
-            c, m, y, k = rgb_to_cmyk(r, g, b)
-            well_id = f"{chr(65 + row)}{col + 1}"  # e.g. A1, B2
+# Stack into one array and normalize
+channels = {'C': C, 'M': M, 'Y': Y, 'B': Blue}
+all_data = []
 
-            # Each ink becomes a separate dispense entry if > 0
-            for color, value in zip(['C', 'M', 'Y', 'K'], [c, m, y, k]):
-                volume = int(value * MAX_VOLUME_NL)
-                if volume > 0:
-                    data.append({
-                        'Well_ID': well_id,
-                        'Channel_ID': CMYK_CHANNELS[color],
-                        'Volume_nL': volume
-                    })
+rows = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[:plate_rows]
 
-    df = pd.DataFrame(data)
-    df.to_csv(OUTPUT_FILE, index=False)
-    print(f"Dispense plan saved to: {OUTPUT_FILE}")
+for i in range(plate_rows):
+    for j in range(plate_cols):
+        well = f"{rows[i]}{j+1}"
+        values = {ch: channels[ch][i, j] for ch in channels}
+        total = sum(values.values())
+        scale = max_total_ul / total if total > 0 else 0
 
-# Run the function with your image
-generate_dispense_plan('input_image.png')
+        for ch in ['B', 'C', 'M', 'Y']:
+            volume_ul = round(values[ch] * scale, 3)
+            all_data.append([well, ch, volume_ul])
+
+# Export
+df = pd.DataFrame(all_data, columns=["Well", "Channel", "Volume(ul)"])
+df.to_csv(output_csv, index=False)
+print(f"Done! CSV saved as: {output_csv}")
