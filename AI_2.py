@@ -5,9 +5,9 @@ import string
 from pathlib import Path
 
 # --- Config ---
-input_image = r"path\to\your\image.jpg"
+input_image = r"C:\Anniversary\nexus_10years_Certus\Tsunami_by_hokusai_19th_century.jpg"
 rows, cols = 16, 24          # 384‑well
-max_volume_ul = 2.0          # total per well across C+M+Y+K
+max_volume_ul = 100.0          # total per well across C+M+Y+K
 out_dir = Path("out"); out_dir.mkdir(exist_ok=True)
 
 # --- Load & resize to 384 grid ---

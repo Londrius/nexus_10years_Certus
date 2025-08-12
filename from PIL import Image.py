@@ -5,7 +5,7 @@ from PIL import Image
 # --- Config ---
 input_image = r"C:\Anniversary\nexus_10years_Certus\Tsunami_by_hokusai_19th_century.jpg"
 rows, cols = 32, 48  # 1536-well plate
-max_volume_ul = 2.0  # total volume per well
+max_volume_ul = 100.0  # total volume per well
 output_csv = "certus_cmyk_output.csv"
 
 # --- Load image and resize ---
