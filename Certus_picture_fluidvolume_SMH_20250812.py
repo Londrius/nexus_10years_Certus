@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from PIL import Image
+import os
 
 # --- Config ---
 input_image = r"C:\Anniversary\nexus_10years_Certus\Tsunami_by_hokusai_19th_century.jpg"
@@ -52,13 +53,16 @@ row_labels = [chr(65 + i) for i in range(rows)]  # 'A' to 'P'
 col_labels = [str(i) for i in range(1, cols + 1)]  # '1' to '24'
 channel_names = ["C", "M", "Y", "K"]
 
+csv_folder = "csv_outputs"
+os.makedirs(csv_folder, exist_ok=True)
+
 for idx, name in enumerate(channel_names):
     # With headers (row letters + column numbers) — good for auditing
     df = pd.DataFrame(scaled[idx], index=row_labels, columns=col_labels).round(3)
-    df.to_csv(f"certus_{rows}x{cols}_{name}.csv")
+    df.to_csv(os.path.join(csv_folder, f"certus_{rows}x{cols}_{name}.csv"))
 
     # Matrix‑only (no headers/indices) — best for strict copy‑paste into the dispenser
-    df.to_csv(f"certus_{rows}x{cols}_{name}_matrix_only.csv", header=False, index=False)
+    df.to_csv(os.path.join(csv_folder, f"certus_{rows}x{cols}_{name}_matrix_only.csv"), header=False, index=False)
 
 # --- Export all channels to a single Excel file with separate sheets ---
 excel_output = f"certus_{rows}x{cols}_CMYK.xlsx"
