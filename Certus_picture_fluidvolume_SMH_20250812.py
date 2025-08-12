@@ -59,3 +59,12 @@ for idx, name in enumerate(channel_names):
 
     # Matrix‑only (no headers/indices) — best for strict copy‑paste into the dispenser
     df.to_csv(f"certus_{rows}x{cols}_{name}_matrix_only.csv", header=False, index=False)
+
+# --- Export all channels to a single Excel file with separate sheets ---
+excel_output = f"certus_{rows}x{cols}_CMYK.xlsx"
+with pd.ExcelWriter(excel_output) as writer:
+    for idx, name in enumerate(channel_names):
+        df = pd.DataFrame(scaled[idx], index=row_labels, columns=col_labels).round(3)
+        df.to_excel(writer, sheet_name=name)
+
+print(f"Excel file saved as {excel_output}")
