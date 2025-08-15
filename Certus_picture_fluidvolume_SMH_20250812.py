@@ -6,7 +6,7 @@ import os
 # --- Config ---
 input_image = r"C:\Anniversary\nexus_10years_Certus\Tsunami_by_hokusai_19th_century.jpg"
 rows, cols = 16, 24  # 384-well plate
-max_volume_ul = 100.0  # total volume per well
+max_volume_ul = 40.0  # total volume per well
 output_csv = "AIcertus_cmyk_output.csv"
 
 # --- Load image and resize ---
@@ -67,6 +67,13 @@ for idx, name in enumerate(channel_names):
 # --- Export all channels to a single Excel file with separate sheets ---
 excel_output = f"certus_{rows}x{cols}_CMYK.xlsx"
 with pd.ExcelWriter(excel_output) as writer:
+    # Add info sheet with max volume
+    info_df = pd.DataFrame({
+        "Parameter": ["Max Volume (uL)"],
+        "Value": [max_volume_ul]
+    })
+    info_df.to_excel(writer, sheet_name="Info", index=False)
+    # Add CMYK sheets
     for idx, name in enumerate(channel_names):
         df = pd.DataFrame(scaled[idx], index=row_labels, columns=col_labels).round(3)
         df.to_excel(writer, sheet_name=name)
