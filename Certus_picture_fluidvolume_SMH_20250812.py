@@ -4,10 +4,15 @@ from PIL import Image
 import os
 
 # --- Config ---
-input_image = r"C:\Anniversary\nexus_10years_Certus\Tsunami_by_hokusai_19th_century.jpg"
+input_image = r"C:\nexus_10years_Certus\nexus_slack_logo.jpg"
 rows, cols = 16, 24  # 384-well plate
 max_volume_ul = 40.0  # total volume per well
 output_csv = "AIcertus_cmyk_output.csv"
+
+# --- Output folder: where this script is located ---
+script_dir = os.path.dirname(os.path.abspath(__file__))
+csv_folder = os.path.join(script_dir, "csv_outputs")
+os.makedirs(csv_folder, exist_ok=True)
 
 # --- Load image and resize ---
 img = Image.open(input_image).convert('RGB')
@@ -27,7 +32,6 @@ Y = np.clip(Y, 0, 1)
 K = np.clip(K, 0, 1)
 
 # --- Create CSV data ---
-# --- Scale so each well's C+M+Y+K == max_volume_ul (keep your volumes consistent) ---
 stack = np.stack([C, M, Y, K], axis=0)          # shape: (4, rows, cols)
 totals = stack.sum(axis=0)                       # shape: (rows, cols)
 scale = np.divide(max_volume_ul, totals, out=np.zeros_like(totals), where=totals > 0)
@@ -53,9 +57,6 @@ row_labels = [chr(65 + i) for i in range(rows)]  # 'A' to 'P'
 col_labels = [str(i) for i in range(1, cols + 1)]  # '1' to '24'
 channel_names = ["C", "M", "Y", "K"]
 
-csv_folder = "csv_outputs"
-os.makedirs(csv_folder, exist_ok=True)
-
 for idx, name in enumerate(channel_names):
     # With headers (row letters + column numbers) — good for auditing
     df = pd.DataFrame(scaled[idx], index=row_labels, columns=col_labels).round(3)
@@ -65,7 +66,7 @@ for idx, name in enumerate(channel_names):
     df.to_csv(os.path.join(csv_folder, f"certus_{rows}x{cols}_{name}_matrix_only.csv"), header=False, index=False)
 
 # --- Export all channels to a single Excel file with separate sheets ---
-excel_output = f"certus_{rows}x{cols}_CMYK.xlsx"
+excel_output = os.path.join(script_dir, f"certus_{rows}x{cols}_CMYK.xlsx")
 with pd.ExcelWriter(excel_output) as writer:
     # Add info sheet with max volume
     info_df = pd.DataFrame({
